@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>나만의 모멘텀</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; color: white; overflow: hidden; font-family: sans-serif; }
+        
+        /* 배경 설정 (4번째 사진) */
+        .background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+                        url('KakaoTalk_20260517_053100437.jpg') no-repeat center center/cover;
+            z-index: -1;
+        }
+
+        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .hidden { display: none !important; }
+
+        /* 날씨 (우측 상단) */
+        #weather { position: absolute; top: 30px; right: 30px; text-align: right; font-size: 1.2rem; }
+
+        /* 시계 */
+        #clock { font-size: 8rem; font-weight: bold; margin: 0; }
+
+        /* 로그인 폼 */
+        #login-form { margin-top: 20px; }
+        #login-form input {
+            background: none; border: none; border-bottom: 3px solid white;
+            color: white; font-size: 2rem; text-align: center; outline: none; padding: 10px; width: 350px;
+        }
+
+        /* 인사말 및 투두 리스트 */
+        #greeting { font-size: 2.5rem; margin: 10px 0 20px 0; }
+        #todo-form input {
+            background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px; color: white; font-size: 1.1rem; text-align: center;
+            width: 280px; outline: none; padding: 10px 15px; backdrop-filter: blur(5px);
+        }
+
+        #todo-list { list-style: none; padding: 0; margin-top: 20px; width: 350px; }
+        .todo-item {
+            background: rgba(0, 0, 0, 0.4); margin-bottom: 8px; padding: 10px 15px;
+            border-radius: 10px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(8px);
+        }
+        .del-btn { background: none; border: none; color: #ff6b6b; cursor: pointer; font-weight: bold; font-size: 1.2rem; }
+
+        /* 명언 스타일 (하단 중앙) */
+        #quote {
+            position: absolute; bottom: 40px; width: 100%; text-align: center;
+            font-size: 1.2rem; font-style: italic; font-weight: 300;
+            padding: 0 20px; box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+
+    <div id="weather">
+        <span>26°C</span><br>
+        <span>Yeongcheon</span>
+    </div>
+
+    <div class="container">
+        <h1 id="clock">00:00:00</h1>
+
+        <form id="login-form">
+            <input type="text" placeholder="이름을 입력하세요" required maxlength="15">
+        </form>
+
+        <div id="main-content" class="hidden">
+            <h2 id="greeting"></h2>
+            <form id="todo-form">
+                <input type="text" placeholder="할 일을 입력하고 엔터!" required>
+            </form>
+            <ul id="todo-list"></ul>
+        </div>
+    </div>
+
+    <div id="quote">
+        <span id="quote-text"></span><br>
+        <span id="quote-author" style="font-size: 0.9rem; opacity: 0.8;"></span>
+    </div>
+
+    <script>
+        const clock = document.querySelector("#clock");
+        const loginForm = document.querySelector("#login-form");
+        const loginInput = document.querySelector("#login-form input");
+        const mainContent = document.querySelector("#main-content");
+        const greeting = document.querySelector("#greeting");
+        const todoForm = document.querySelector("#todo-form");
+        const todoInput = document.querySelector("#todo-form input");
+        const todoList = document.querySelector("#todo-list");
+        const quoteText = document.querySelector("#quote-text");
+        const quoteAuthor = document.querySelector("#quote-author");
+
+        // 명언 데이터 리스트
+        const quotes = [
+            { text: "삶이 있는 한 희망은 있다.", author: "키케로" },
+            { text: "산다는 것 그것은 치열한 전투이다.", author: "로망로랑" },
+            { text: "언제나 현재에 집중할 수 있다면 행복할 것이다.", author: "파울로 코엘료" },
+            { text: "피할 수 없으면 즐겨라.", author: "로버트 엘리엇" },
+            { text: "먼저 자신을 비웃어라. 다른 사람에게 비웃음 사기 전에.", author: "엘사 맥스웰" },
+            { text: "한 번의 실패와 영원한 실패를 혼동하지 마라.", author: "F. 스콧 피츠제럴드" }
+        ];
+
+        // 1. 실시간 시계
+        function getClock() {
+            const date = new Date();
+            const h = String(date.getHours()).padStart(2, "0");
+            const m = String(date.getMinutes()).padStart(2, "0");
+            const s = String(date.getSeconds()).padStart(2, "0");
+            clock.innerText = `${h}:${m}:${s}`;
+        }
+        getClock();
+        setInterval(getClock, 1000);
+
+        // 2. 명언 표시 기능
+        function setQuote() {
+            const todaysQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            quoteText.innerText = `"${todaysQuote.text}"`;
+            quoteAuthor.innerText = `- ${todaysQuote.author}`;
+        }
+        setQuote();
+
+        // 3. 로그인 (새로고침 시 초기화)
+        function onLoginSubmit(event) {
+            event.preventDefault();
+            const username = loginInput.value;
+            loginForm.classList.add("hidden");
+            paintMainUI(username);
+        }
+
+        function paintMainUI(username) {
+            greeting.innerText = `Hello, ${username}!`;
+            mainContent.classList.remove("hidden");
+        }
+
+        // 4. 투두 리스트
+        let toDos = [];
+
+        function saveToDos() {
+            localStorage.setItem("todos", JSON.stringify(toDos));
+        }
+
+        function deleteToDo(event) {
+            const li = event.target.parentElement;
+            li.remove();
+            toDos = toDos.filter((toDo) => toDo.id !== parseInt(li.id));
+            saveToDos();
+        }
+
+        function paintToDo(newTodo) {
+            const li = document.createElement("li");
+            li.id = newTodo.id;
+            li.className = "todo-item";
+            li.innerHTML = `<span>${newTodo.text}</span>`;
+            const button = document.createElement("button");
+            button.innerText = "✕";
+            button.className = "del-btn";
+            button.addEventListener("click", deleteToDo);
+            li.appendChild(button);
+            todoList.appendChild(li);
+        }
+
+        function handleToDoSubmit(event) {
+            event.preventDefault();
+            const newTodo = todoInput.value;
+            todoInput.value = "";
+            const newTodoObj = { text: newTodo, id: Date.now() };
+            toDos.push(newTodoObj);
+            paintToDo(newTodoObj);
+            saveToDos();
+        }
+
+        loginForm.addEventListener("submit", onLoginSubmit);
+        todoForm.addEventListener("submit", handleToDoSubmit);
+
+        const savedToDos = localStorage.getItem("todos");
+        if (savedToDos !== null) {
+            const parsedToDos = JSON.parse(savedToDos);
+            toDos = parsedToDos;
+            parsedToDos.forEach(paintToDo);
+        }
+    </script>
+</body>
+</html>
